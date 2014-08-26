@@ -16,5 +16,9 @@ module SpreeWebpay
     end
 
     config.to_prepare &method(:activate).to_proc
+
+    initializer "spree.webpay.payment_methods", :after => "spree.register.payment_methods" do |app|
+      app.config.spree.payment_methods << Spree::PaymentMethod::Webpay
+    end
   end
 end
