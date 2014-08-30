@@ -1,0 +1,7 @@
+<%= render "spree/checkout/payment/gateway", :payment_method => payment_method %>
+<script type="text/javascript" src="https://js.webpay.jp/v1"></script>
+<script type="text/javascript">
+  WebPay.setPublishableKey("<%= payment_method.preferred_publishable_key %>");
+  Spree.webpayPaymentMethod = $('#payment_method_' + <%= payment_method.id %>)
+</script>
+<%= javascript_include_tag "store/gateway/webpay" %>

@@ -6,6 +6,7 @@ module Spree
     preference :secret_key, :string
     preference :publishable_key, :string
 
+    # Meta ================
     def payment_source_class
       CreditCard
     end
@@ -42,8 +43,13 @@ module Spree
       @account_info.card_types_supported.include?(brand_name)
     end
 
-    # Payment related methods called from Spree core modules.
+    # Payment related methods ================
     # Options are ignored unless they are mentioned in parameters list.
+    CVC_CODE_TRANSLATOR = {
+      'pass' => 'M',
+      'fail' => 'N',
+      'unchecked' => 'P'
+    }
 
     # Performs an authorization, which reserves the funds on the customer's credit card, but does not
     # charge the card.
@@ -53,6 +59,7 @@ module Spree
     # * <tt>money</tt> -- The amount to be authorized as an Integer value in cents.
     # * <tt>paysource</tt> -- The CreditCard or Check details for the transaction.
     def authorize(money, paysource, options = {})
+      create_charge(money, paysource, false)
     end
 
     # Perform a purchase, which is essentially an authorization and capture in a single operation.
@@ -62,6 +69,7 @@ module Spree
     # * <tt>money</tt> -- The amount to be purchased as an Integer value in cents.
     # * <tt>paysource</tt> -- The CreditCard or Check details for the transaction.
     def purchase(money, paysource, options = {})
+      create_charge(money, paysource, true)
     end
 
     # Captures the funds from an authorized transaction.
@@ -103,6 +111,35 @@ module Spree
     # In this gateway, what we call 'secret_key' is the 'login'
     def client
       @client ||= WebPay.new(preferred_secret_key)
+    end
+
+    def create_charge(money, paysource, capture)
+      params = {
+        amount: money,
+        currency: 'jpy',
+        capture: capture,
+      }
+      params[:card] = paysource.gateway_payment_profile_id
+      begin
+        response = client.charge.create(params)
+        ActiveMerchant::Billing::Response.new(!response.failure_message,
+          "Transaction approved",
+          response.to_h,
+          :test => !!response.livemode,
+          :authorization => response.id,
+          :avs_result => nil, # WebPay does not check avs
+          :cvv_result => CVC_CODE_TRANSLATOR[response.card.cvc_check]
+          )
+      rescue WebPay::ApiError => e
+        ActiveMerchant::Billing::Response.new(false,
+          e.respond_to?(:data) ? e.data.error.message : e.message,
+          {},
+          :test => false,
+          :authorization => e.respond_to?(:data) ? e.data.error.charge : nil,
+          :avs_result => nil,
+          :cvv_result => nil
+          )
+      end
     end
   end
 end
