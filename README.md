@@ -1,7 +1,9 @@
 SpreeWebpay
 ===========
 
-Introduction goes here.
+This is a spree extension to use [WebPay](https://webpay.jp/) as a payment method.
+
+WebPayを決済に利用するためのSpree Extensionです。
 
 Installation
 ------------
@@ -18,6 +20,10 @@ Bundle your dependencies and run the installation generator:
 bundle
 bundle exec rails g spree_webpay:install
 ```
+
+Open payment method configuration (http://localhost:3000/admin/payment_methods) and add a new payment method.
+
+Select `Spree::PaymentMethod::Webpay`, and put secret and publishable keys shown in [your webpay setting page](https://webpay.jp/settings).
 
 Testing
 -------
@@ -36,4 +42,12 @@ Simply add this require statement to your spec_helper:
 require 'spree_webpay/factories'
 ```
 
-Copyright (c) 2014 [name of extension creator], released under the New BSD License
+Hacking
+-------
+
+Due to spree's problem, **card data cannot be saved**.
+Applying [this patch](https://github.com/spree/spree/pull/5292) enables saving cards per user.
+However, this change is known to break other payment methods.
+Neither we nor the Spree team take responsibility about this hack.
+
+Copyright (c) 2014 webpay, released under the New BSD License
