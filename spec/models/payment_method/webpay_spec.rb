@@ -75,6 +75,22 @@ describe Spree::PaymentMethod::Webpay do
       expect(response.avs_result).to eq empty_avs_result
       expect(response.cvv_result).to eq match_cvv_result
     end
+
+    context 'with customer_profile_id' do
+      let(:mock_card) { double('CreditCard', gateway_customer_profile_id: 'cus_savedcustomer', gateway_payment_profile_id: nil) }
+      let(:params) { {
+          amount: 1500,
+          currency: 'jpy',
+          customer: 'cus_savedcustomer',
+          capture: false,
+        }}
+
+      it 'should request as expected' do
+        mock_response = webpay_stub(:charges, :create, params: params)
+        payment_method.authorize(1500, mock_card)
+        assert_requested(:post, "https://api.webpay.jp/v1/charges", body: JSON.dump(params))
+      end
+    end
   end
 
   describe '#purchase' do
@@ -135,19 +151,19 @@ describe Spree::PaymentMethod::Webpay do
 
     it 'should capture existing charge with given amount' do
       webpay_stub(:charges, :refund, params: params)
-      payment_method.void(charge_id)
+      payment_method.void(charge_id, nil)
       assert_requested(:post, "https://api.webpay.jp/v1/charges/#{charge_id}/refund", body: '{}')
     end
 
     it 'should return success ActiveMerchant::Billing::Response' do
       webpay_stub(:charges, :refund, params: params)
-      response = payment_method.void(charge_id)
+      response = payment_method.void(charge_id, nil)
       expect(response).to be_success
     end
 
     it 'should return failed ActiveMerchant::Billing::Response for errors' do
       webpay_stub(:charges, :refund, params: params, error: :bad_request)
-      response = payment_method.void(charge_id)
+      response = payment_method.void(charge_id, nil)
       expect(response).not_to be_success
     end
   end
@@ -159,28 +175,62 @@ describe Spree::PaymentMethod::Webpay do
 
     it 'should capture existing charge with given amount' do
       webpay_stub(:charges, :refund, params: params)
-      payment_method.refund(1000, charge_id)
+      payment_method.refund(1000, nil, charge_id)
       assert_requested(:post, "https://api.webpay.jp/v1/charges/#{charge_id}/refund", body: JSON.dump(amount: 400))
     end
 
     it 'should return success ActiveMerchant::Billing::Response' do
       webpay_stub(:charges, :refund, params: params)
-      response = payment_method.refund(1000, charge_id)
+      response = payment_method.refund(1000, nil, charge_id)
       expect(response).to be_success
     end
 
     it 'should return failed ActiveMerchant::Billing::Response for errors in retrieve' do
       webpay_stub(:charges, :retrieve, params: { id: charge_id }, error: :not_found)
-      response = payment_method.refund(1000, charge_id)
+      response = payment_method.refund(1000, nil, charge_id)
       expect(response).not_to be_success
       expect(response.message).to eq 'No such charge: ch_bBM4IJ0XF2VIch8'
     end
 
     it 'should return failed ActiveMerchant::Billing::Response for errors in refund' do
       webpay_stub(:charges, :refund, params: params, error: :bad_request)
-      response = payment_method.refund(1000, charge_id)
+      response = payment_method.refund(1000, nil, charge_id)
       expect(response).not_to be_success
       expect(response.message).to eq "can't save charge: Amount can't be blank" # test error message
+    end
+  end
+
+  describe '#create_profile' do
+    let(:source) { double("Source", gateway_customer_profile_id: nil, gateway_payment_profile_id: 'tok_sourceprofileid') }
+    let(:order) { double("Source", email: 'customer@example.com', name: 'John Doe') }
+    let(:payment) { double("Payment", source: source, order: order) }
+    let(:params) { {
+        card: 'tok_sourceprofileid',
+        description: 'John Doe',
+        email: 'customer@example.com',
+      } }
+
+    it 'should do nothing if source already has customer_profile_id' do
+      expect(source).to receive(:gateway_customer_profile_id).and_return('cus_alreadyassigned')
+      expect(source).not_to receive(:update_attributes!)
+      payment_method.create_profile(payment)
+    end
+
+    it 'should create customer' do
+      customer = webpay_stub(:customers, :create, params: params)
+      expect(source).to receive(:update_attributes!).with(gateway_customer_profile_id: customer['id'], gateway_payment_profile_id: nil)
+      payment_method.create_profile(payment)
+
+      assert_requested(:post, "https://api.webpay.jp/v1/customers", body: JSON.dump(params))
+    end
+
+    it 'should call gateway_error on error response' do
+      webpay_stub(:customers, :create, params: params, error: :bad_request)
+      expect(source).not_to receive(:update_attributes!)
+      expect(payment).to receive(:send).with(:gateway_error, "can't save charge: Amount can't be blank")
+      payment_method.create_profile(payment)
+
+      assert_requested(:post, "https://api.webpay.jp/v1/customers", body: JSON.dump(params))
     end
   end
 end

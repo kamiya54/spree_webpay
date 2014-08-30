@@ -15,18 +15,25 @@ module Spree
       'webpay'
     end
 
-    # TODO: support it
     def payment_profiles_supported?
-      false
+      true
     end
 
     def source_required?
       true
     end
 
-    # TODO: implement using WebPay Customer
+    # Copied from spree-core gateway.rb
     def reusable_sources(order)
-      super
+      if order.completed?
+        sources_by_order order
+      else
+        if order.user_id
+          self.credit_cards.where(user_id: order.user_id).with_payment_profile
+        else
+          []
+        end
+      end
     end
 
     def supports?(source)
@@ -87,7 +94,7 @@ module Spree
     # ==== Parameters
     #
     # * <tt>authorization</tt> - The authorization returned from the previous authorize request.
-    def void(authorization, options = {})
+    def void(authorization, _source, options = {})
       wrap_in_active_merchant_response { client.charge.refund(authorization) }
     end
 
@@ -100,18 +107,41 @@ module Spree
     #
     # * <tt>money</tt> -- The amount to be credited to the customer as an Integer value.
     # * <tt>identification</tt> -- The ID of the original transaction against which the refund is being issued.
-    def refund(money, identification, options = {})
+    def refund(money, _source, identification, options = {})
       wrap_in_active_merchant_response do
         charge = client.charge.retrieve(identification)
         client.charge.refund(id: identification, amount: charge.amount.to_i - charge.amount_refunded.to_i - money)
       end
     end
 
-    def credit(money, identification, options = {})
-      refund(money, identification, options)
+    def credit(money, source, identification, options = {})
+      refund(money, source, identification, options)
+    end
+
+    def create_profile(payment)
+      return if payment.source.gateway_customer_profile_id.present?
+
+      begin
+        customer = client.customer.create(
+          email: payment.order.email,
+          description: payment.order.name,
+          card: payment.source.gateway_payment_profile_id,
+          )
+        payment.source.update_attributes!({
+            :gateway_customer_profile_id => customer.id,
+            :gateway_payment_profile_id => nil
+          })
+      rescue WebPay::ApiError => e
+        payment.send(:gateway_error, e.respond_to?(:data) ? e.data.error.message : e.message)
+      end
     end
 
     private
+
+    def sources_by_order(order)
+      source_ids = order.payments.where(source_type: payment_source_class.to_s, payment_method_id: self.id).pluck(:source_id).uniq
+      payment_source_class.where(id: source_ids).with_payment_profile
+    end
 
     # In this gateway, what we call 'secret_key' is the 'login'
     def client
@@ -124,7 +154,11 @@ module Spree
         currency: 'jpy',
         capture: capture,
       }
-      params[:card] = paysource.gateway_payment_profile_id
+      if payment_id = paysource.gateway_payment_profile_id.presence
+        params[:card] = payment_id
+      else
+        params[:customer] = paysource.gateway_customer_profile_id.presence
+      end
       wrap_in_active_merchant_response { client.charge.create(params) }
     end
 
