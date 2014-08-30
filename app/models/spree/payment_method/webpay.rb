@@ -103,7 +103,7 @@ module Spree
     def refund(money, identification, options = {})
       wrap_in_active_merchant_response do
         charge = client.charge.retrieve(identification)
-        client.charge.refund(id: identification, amount: charge.amount - charge.amount_refunded - money)
+        client.charge.refund(id: identification, amount: charge.amount.to_i - charge.amount_refunded.to_i - money)
       end
     end
 
@@ -132,9 +132,9 @@ module Spree
       begin
         response = block.call
         ActiveMerchant::Billing::Response.new(!response.failure_message,
-          "Transaction approved",
+          response.failure_message || "Transaction approved",
           response.to_h,
-          :test => !!response.livemode,
+          :test => !response.livemode,
           :authorization => response.id,
           :avs_result => nil, # WebPay does not check avs
           :cvv_result => CVC_CODE_TRANSLATOR[response.card.cvc_check]
