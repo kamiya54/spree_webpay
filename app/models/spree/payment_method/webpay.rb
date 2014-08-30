@@ -79,6 +79,7 @@ module Spree
     # * <tt>money</tt> -- The amount to be captured as an Integer value in cents.
     # * <tt>authorization</tt> -- The authorization returned from the previous authorize request.
     def capture(money, authorization, options = {})
+      wrap_in_active_merchant_response { client.charge.capture(id: authorization, amount: money) }
     end
 
     # Void a previous transaction
@@ -87,6 +88,7 @@ module Spree
     #
     # * <tt>authorization</tt> - The authorization returned from the previous authorize request.
     def void(authorization, options = {})
+      wrap_in_active_merchant_response { client.charge.refund(authorization) }
     end
 
     # Refund a transaction.
@@ -99,7 +101,10 @@ module Spree
     # * <tt>money</tt> -- The amount to be credited to the customer as an Integer value.
     # * <tt>identification</tt> -- The ID of the original transaction against which the refund is being issued.
     def refund(money, identification, options = {})
-
+      wrap_in_active_merchant_response do
+        charge = client.charge.retrieve(identification)
+        client.charge.refund(id: identification, amount: charge.amount - charge.amount_refunded - money)
+      end
     end
 
     def credit(money, identification, options = {})
@@ -120,8 +125,12 @@ module Spree
         capture: capture,
       }
       params[:card] = paysource.gateway_payment_profile_id
+      wrap_in_active_merchant_response { client.charge.create(params) }
+    end
+
+    def wrap_in_active_merchant_response(&block)
       begin
-        response = client.charge.create(params)
+        response = block.call
         ActiveMerchant::Billing::Response.new(!response.failure_message,
           "Transaction approved",
           response.to_h,
