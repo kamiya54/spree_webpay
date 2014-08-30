@@ -91,6 +91,15 @@ describe Spree::PaymentMethod::Webpay do
         assert_requested(:post, "https://api.webpay.jp/v1/charges", body: JSON.dump(params))
       end
     end
+
+    context 'connection error' do
+      it 'should return failed ActiveMerchant::Billing::Response' do
+        stub_request(:any, 'https://api.webpay.jp/v1/charges').to_timeout
+        response = payment_method.authorize(1500, mock_card)
+        expect(response).not_to be_success
+        expect(response.message).to eq 'API request failed with execution expired'
+      end
+    end
   end
 
   describe '#purchase' do
