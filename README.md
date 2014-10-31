@@ -1,4 +1,4 @@
-SpreeWebpay
+SpreeWebpay [![Build Status](https://travis-ci.org/webpay/spree_webpay.svg?branch=master)](https://travis-ci.org/webpay/spree_webpay)
 ===========
 
 This is a spree extension to use [WebPay](https://webpay.jp/) as a payment method.
