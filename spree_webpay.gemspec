@@ -12,7 +12,6 @@ Gem::Specification.new do |s|
   s.license       = 'New-BSD'
 
   s.files       = `git ls-files`.split($/)
-  s.test_files  = `git ls-files -- {test,spec,features}/*`.split("\n")
   s.test_files    = s.files.grep(%r{^spec/})
   s.require_path = ['lib']
 
