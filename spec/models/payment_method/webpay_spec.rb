@@ -7,7 +7,7 @@ describe Spree::PaymentMethod::Webpay do
     payment_method.preferences = { secret_key: 'test_secret_xxx' }
   end
   let(:empty_avs_result) { {"code"=>nil, "message"=>nil, "street_match"=>nil, "postal_match"=>nil} }
-  let(:match_cvv_result) { {"code"=>"M", "message"=>"Match"} }
+  let(:match_cvv_result) { {"code"=>"M", "message"=>"CVV matches"} }
   let(:empty_cvv_result) { {"code"=>nil, "message"=>nil} }
 
   describe '#supports?' do
