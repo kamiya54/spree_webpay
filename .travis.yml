@@ -2,5 +2,7 @@ language: ruby
 rvm:
   - 1.9.3
   - 2.1.2
-before_script: "bundle exec rake test_app"
-script: "bundle exec rake"
+script: bundle exec rake
+notifications:
+  webhooks:
+    secure: M6KmG9KM1DExfjf8uIjTMflLvwe7HaZa/I3r5g6Yg0lI1VySt3cUXKrbQgaRR2uU+wpjazdL0txzKzgH/Md/Hddbpkg1qSQXFDBzUe23xx+Hm0v0W/0CyQWeLj4pKf1bQcK4UaxjKK+VW7i4cwdKN/FYT7spNzRPwE8tHpxJhmI=
