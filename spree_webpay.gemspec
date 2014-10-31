@@ -2,19 +2,19 @@
 Gem::Specification.new do |s|
   s.platform    = Gem::Platform::RUBY
   s.name        = 'spree_webpay'
-  s.version     = '2.3.1'
-  s.summary     = 'TODO: Add gem summary here'
-  s.description = 'TODO: Add (optional) gem description here'
+  s.version     = '0.0.1'
+  s.description = 'A spree extension to use WebPay as a payment method'
+  s.summary     = 'Spree::PaymentMethod::Webpay add as a new payment method for using WebPay'
   s.required_ruby_version = '>= 1.9.3'
+  s.authors       = ['webpay', 'tomykaira']
+  s.email         = ['administrators@webpay.jp', 'tomykaira@webpay.jp']
+  s.homepage      = 'https://webpay.jp'
+  s.license       = 'New-BSD'
 
-  # s.author    = 'You'
-  # s.email     = 'you@example.com'
-  # s.homepage  = 'http://www.spreecommerce.com'
-
-  #s.files       = `git ls-files`.split("\n")
-  #s.test_files  = `git ls-files -- {test,spec,features}/*`.split("\n")
-  s.require_path = 'lib'
-  s.requirements << 'none'
+  s.files       = `git ls-files`.split($/)
+  s.test_files  = `git ls-files -- {test,spec,features}/*`.split("\n")
+  s.test_files    = s.files.grep(%r{^spec/})
+  s.require_path = ['lib']
 
   s.add_dependency 'spree_core', '>= 2.3.1', '< 2.5.0'
   s.add_dependency 'webpay', '~> 3.1'
