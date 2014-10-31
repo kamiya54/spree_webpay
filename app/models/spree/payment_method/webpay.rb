@@ -128,8 +128,8 @@ module Spree
           card: payment.source.gateway_payment_profile_id,
           )
         payment.source.update_attributes!({
-            :gateway_customer_profile_id => customer.id,
-            :gateway_payment_profile_id => nil
+            gateway_customer_profile_id: customer.id,
+            gateway_payment_profile_id: nil
           })
       rescue WebPay::ApiError => e
         payment.send(:gateway_error, e.respond_to?(:data) ? e.data.error.message : e.message)
@@ -168,19 +168,19 @@ module Spree
         ActiveMerchant::Billing::Response.new(!response.failure_message,
           response.failure_message || "Transaction approved",
           response.to_h,
-          :test => !response.livemode,
-          :authorization => response.id,
-          :avs_result => nil, # WebPay does not check avs
-          :cvv_result => CVC_CODE_TRANSLATOR[response.card.cvc_check]
+          test: !response.livemode,
+          authorization: response.id,
+          avs_result: nil, # WebPay does not check avs
+          cvv_result: CVC_CODE_TRANSLATOR[response.card.cvc_check]
           )
       rescue WebPay::ApiError => e
         ActiveMerchant::Billing::Response.new(false,
           e.respond_to?(:data) ? e.data.error.message : e.message,
           {},
-          :test => false,
-          :authorization => e.respond_to?(:data) ? e.data.error.charge : nil,
-          :avs_result => nil,
-          :cvv_result => nil
+          test: false,
+          authorization: e.respond_to?(:data) ? e.data.error.charge : nil,
+          avs_result: nil,
+          cvv_result: nil
           )
       end
     end
