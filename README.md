@@ -50,4 +50,4 @@ Applying [this patch](https://github.com/spree/spree/pull/5292) enables saving c
 However, this change is known to break other payment methods.
 Neither we nor the Spree team take responsibility about this hack.
 
-Copyright (c) 2014 webpay, released under the New BSD License
+Copyright (c) WebPay, released under the New BSD License
