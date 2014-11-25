@@ -2,7 +2,7 @@
 Gem::Specification.new do |s|
   s.platform     = Gem::Platform::RUBY
   s.name         = 'spree_webpay'
-  s.version      = '0.0.1'
+  s.version      = '0.0.2'
   s.description  = 'A spree extension to use WebPay as a payment method'
   s.summary      = 'Spree::PaymentMethod::Webpay add as a new payment method for using WebPay'
   s.authors      = ['webpay', 'tomykaira']
