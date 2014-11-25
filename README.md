@@ -8,6 +8,8 @@ WebPayを決済に利用するためのSpree Extensionです。
 Installation
 ------------
 
+If you do not have Spree installation, setup a project following [Getting Started | Spree Commerce](http://guides.spreecommerce.com/developer/getting_started_tutorial.html).
+
 Add spree_webpay to your Gemfile:
 
 ```ruby
@@ -21,9 +23,20 @@ bundle
 bundle exec rails g spree_webpay:install
 ```
 
-Open payment method configuration (http://localhost:3000/admin/payment_methods) and add a new payment method.
+WebPay extension uses original js in the payment page.
+Add our JS file to precompile file list (`config/initializers/assets.rb`).
 
-Select `Spree::PaymentMethod::Webpay`, and put secret and publishable keys shown in [your webpay setting page](https://webpay.jp/settings).
+```ruby
+Rails.application.config.assets.precompile += %w( store/gateway/webpay.js )
+```
+
+Then, start Rails server and configure WebPay payment method.
+
+- Because WebPay only supports JPY currency, we recommend to change currency to JPY.
+    - In the same way, set currencies of shipping methods to JPY.
+    - If you are using sample data, those prices are disabled when currency is changed. Reset them in JPY.
+- Open payment method configuration (http://localhost:3000/admin/payment_methods) and add a new payment method.
+- Select `Spree::PaymentMethod::Webpay`, and put secret and publishable keys shown in [your webpay setting page](https://webpay.jp/settings).
 
 Testing
 -------
@@ -41,13 +54,5 @@ Simply add this require statement to your spec_helper:
 ```ruby
 require 'spree_webpay/factories'
 ```
-
-Hacking
--------
-
-Due to spree's problem, **card data cannot be saved**.
-Applying [this patch](https://github.com/spree/spree/pull/5292) enables saving cards per user.
-However, this change is known to break other payment methods.
-Neither we nor the Spree team take responsibility about this hack.
 
 Copyright (c) WebPay, released under the New BSD License

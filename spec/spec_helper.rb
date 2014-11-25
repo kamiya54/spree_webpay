@@ -17,7 +17,6 @@ require File.expand_path('../dummy/config/environment.rb',  __FILE__)
 
 require 'rspec/rails'
 require 'database_cleaner'
-require 'ffaker'
 require 'webmock/rspec'
 require 'webpay/mock'
 
@@ -29,15 +28,9 @@ Dir[File.join(File.dirname(__FILE__), 'support/**/*.rb')].each { |f| require f }
 require 'spree/testing_support/authorization_helpers'
 require 'spree/testing_support/capybara_ext'
 require 'spree/testing_support/controller_requests'
-require 'spree/testing_support/factories'
 require 'spree/testing_support/url_helpers'
 
-# Requires factories defined in lib/spree_webpay/factories.rb
-require 'spree_webpay/factories'
-
 RSpec.configure do |config|
-  config.include FactoryGirl::Syntax::Methods
-
   # == URL Helpers
   #
   # Allows access to Spree's routes in specs:
