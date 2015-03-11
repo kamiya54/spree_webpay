@@ -58,7 +58,7 @@ describe Spree::PaymentMethod::Webpay do
       mock_response = webpay_stub(:charges, :create, params: params, error: :card_error)
       response = payment_method.authorize(1500, mock_card)
       expect(response).not_to be_success
-      expect(response.message).to eq 'This card cannot be used.'
+      expect(response.message).to eq 'The card number is invalid. Make sure the number entered matches your credit card.'
       expect(response.test).to eq false
       expect(response.authorization).to eq nil
       expect(response.avs_result).to eq empty_avs_result
@@ -198,14 +198,14 @@ describe Spree::PaymentMethod::Webpay do
       webpay_stub(:charges, :retrieve, params: { id: charge_id }, error: :not_found)
       response = payment_method.refund(1000, nil, charge_id)
       expect(response).not_to be_success
-      expect(response.message).to eq 'No such charge: ch_bBM4IJ0XF2VIch8'
+      expect(response.message).to eq 'No such charge'
     end
 
     it 'should return failed ActiveMerchant::Billing::Response for errors in refund' do
       webpay_stub(:charges, :refund, params: params, error: :bad_request)
       response = payment_method.refund(1000, nil, charge_id)
       expect(response).not_to be_success
-      expect(response.message).to eq "can't save charge: Amount can't be blank" # test error message
+      expect(response.message).to eq "Missing required param: amount" # test error message
     end
   end
 
@@ -236,7 +236,7 @@ describe Spree::PaymentMethod::Webpay do
     it 'should call gateway_error on error response' do
       webpay_stub(:customers, :create, params: params, error: :bad_request)
       expect(source).not_to receive(:update_attributes!)
-      expect(payment).to receive(:send).with(:gateway_error, "can't save charge: Amount can't be blank")
+      expect(payment).to receive(:send).with(:gateway_error, "Missing required param: amount")
       payment_method.create_profile(payment)
 
       assert_requested(:post, "https://api.webpay.jp/v1/customers", body: JSON.dump(params))
